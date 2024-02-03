@@ -1373,16 +1373,6 @@ if not detailed_print:
 
 
 
-
-
-
-
-
-
-
-
-
-
 # usub ins
 # root to p0 - func to move from root to term 1
 # p0 to op0 - func to move from term 1 to op0 (inversible)
@@ -1560,6 +1550,35 @@ for fr in range(4):
 
 if not detailed_print:
    print(f"  umul - iids: {pre_i} - {i - 1} TODO - RESERVED")
+
+
+# udiv ins
+
+# RESERVE UDIV
+
+udiv_var = f"""
+udiv<[var]>
+
+konec
+"""
+
+pre_i = i
+
+if detailed_print:
+   print("\nudiv - divide register by register 2 TODO - RESERVED")
+
+for fr in range(4):
+   for sr in range(4):
+      if not fr == sr:
+         ins_map[2][i] = ucode_instantiate_var(udiv_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+         if detailed_print:
+            print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
+         i += 1
+
+if not detailed_print:
+   print(f"  udiv - iids: {pre_i} - {i - 1} TODO - RESERVED")
+
+
 
 # uinc ins
 
@@ -1896,9 +1915,9 @@ out.write(pre_world)
 world = """
 ....................
 ....................
-4...................
-4...................
-2...................
+....................
+....................
+....................
 ....................
 ....................
 ....................
@@ -1915,7 +1934,7 @@ world = """
 ....................
 ....................
 """
-out.write(world)
+out.write(world.replace("\n","", 1))
 
 
 # == end ucode ==
