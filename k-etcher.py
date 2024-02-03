@@ -2,7 +2,7 @@
 arch = "KPU"
 
 major = "1b"
-minor = "22-main"
+minor = "24-main"
 
 detailed_print = True
 
@@ -32,11 +32,11 @@ print(f"KPUv{major}.{minor} stats")
 # konec -> end
 #
 #
-# Velikost města: 20, 20   ->   Map size: 20, 20
+# Velikost města: 20, 20  ->   Map size: 20, 20
 # Pozice Karla: 7, 1      ->   Karel position: 7, 1
 # Otočení Karla: VÝCHOD   ->   Karel rotation: EAST
 # Umístění domova: 7, 1   ->   Home position: 7, 1
-# Definice města:        ->   Map definition:
+# Definice města:         ->   Map definition:
 #
 
 
@@ -1371,6 +1371,18 @@ for fr in range(4):
 if not detailed_print:
    print(f"  uadd - iids: {pre_i} - {i - 1}")
 
+
+
+
+
+
+
+
+
+
+
+
+
 # usub ins
 # root to p0 - func to move from root to term 1
 # p0 to op0 - func to move from term 1 to op0 (inversible)
@@ -1541,7 +1553,7 @@ if detailed_print:
 for fr in range(4):
    for sr in range(4):
       if not fr == sr:
-         ins_map[2][i] = ucode_instantiate_var(usub_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+         ins_map[2][i] = ucode_instantiate_var(umul_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
          if detailed_print:
             print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
          i += 1
@@ -1558,7 +1570,7 @@ uinc<[var]>
    [root to p0]
    {inc_and_carry}
    {root_align}
-end
+konec
 """
 
 pre_i = i
@@ -1583,10 +1595,10 @@ udec_var = f"""
 udec<[var]>
    {root_align}
    {inc_and_carry}
-   [root to p0]")
+   [root to p0]
    {sub_one_and_carry}
    {root_align}
-end
+konec
 """
 
 pre_i = i
@@ -1618,7 +1630,8 @@ dre_restore_var = f"""// restore instruction kat
    opakuj [resval]-krát
       polož
    konec
-   krok"""
+   krok
+"""
 
 dre_subgid_var = f"""
 dre-gid-[gid]-iid-[biid]-[eiid]
@@ -1851,8 +1864,8 @@ konec
 main = ucode_define("""
 __main__
    dokud není sever
-     __fetch__
-     __dre__
+      __fetch__
+      __dre__
    konec
 konec
 """)
@@ -1872,10 +1885,10 @@ konec
 
 pre_world = """
 Velikost města: 20, 20
-Pozice Karla: 7, 1   
-Otočení Karla: VÝCHOD 
-Umístění domova: 7, 1 
-Definice města:      
+Pozice Karla: 7, 1
+Otočení Karla: VÝCHOD
+Umístění domova: 7, 1
+Definice města:
 """
 
 out.write(pre_world)
@@ -1883,9 +1896,9 @@ out.write(pre_world)
 world = """
 ....................
 ....................
-....................
-....................
-....................
+4...................
+4...................
+2...................
 ....................
 ....................
 ....................
