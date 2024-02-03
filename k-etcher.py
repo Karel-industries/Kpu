@@ -1,58 +1,98 @@
+#!/bin/python3
 arch = "KPU"
 
 major = "1b"
 minor = "22-main"
 
+detailed_print = True
+
 out = open(f"{arch}v{major}.{minor}.K99", "w")
 print(f"KPUv{major}.{minor} stats")
 
+# English translation
+#
+# krok -> step
+# vlevo-vbok -> left
+# zvedni -> pick
+# polož -> place
+# opakuj -> repeat
+# krát -> times
+# dokud -> until
+# když -> if
+# jinak -> else
+# je -> is
+# není -> isnot
+# zeď -> wall
+# značka -> flag
+# domov -> home
+# sever -> north
+# jih -> south
+# západ -> west
+# východ -> east
+# konec -> end
+#
+#
+# Velikost města: 20, 20   ->   Map size: 20, 20
+# Pozice Karla: 7, 1      ->   Karel position: 7, 1
+# Otočení Karla: VÝCHOD   ->   Karel rotation: EAST
+# Umístění domova: 7, 1   ->   Home position: 7, 1
+# Definice města:        ->   Map definition:
+#
+
+
 # defines a new ucode function in output and returns the function name (for calling)
 def ucode_define(impl):
-    out.write(impl.upper())
-    out.write('\n')
+   out.write(impl.upper())
+   out.write('\n')
 
-    lines = impl.split('\n')
-    last_def = "s"
+   lines = impl.split('\n')
+   last_def = "s"
 
-    for l in lines:
-        if not l.startswith(" ") and (l.strip() != "konec" and l != ""):
-            last_def = l
+   for l in lines:
+      if not l.startswith(" ") and (l.strip() != "konec" and l != ""):
+         last_def = l
 
-    return last_def
+   return last_def
 
 # performs variable substitution on a variable function implemetation (replaces placeholders in vars with final values in vals), defines the function in output and returns the function name (for calling)
+
+
 def ucode_instantiate_var(var_impl, vars, vals):
-    impl = var_impl
-    for i in range(len(vars)):
+   impl = var_impl
+   for i in range(len(vars)):
       impl = impl.replace(str(vars[i]), str(vals[i]))
-   
-    if '[' in impl or ']' in impl:
-        raise ValueError("Not all variadic placeholders were substituted after variable function instantiation! Variable substitution not finished!")
 
-    out.write(impl.upper())
-    out.write('\n')
+   if '[' in impl or ']' in impl:
+      raise ValueError(
+         "Not all variadic placeholders were substituted after variable function instantiation! Variable substitution not finished!")
 
-    lines = impl.split('\n')
-    last_def = "s"
+   out.write(impl.upper())
+   out.write('\n')
 
-    for l in lines:
-        if not l.startswith(" ") and (l.strip() != "konec" and l != ""):
-            last_def = l
+   lines = impl.split('\n')
+   last_def = "s"
 
-    return last_def
+   for l in lines:
+      if not l.startswith(" ") and (l.strip() != "konec" and l != ""):
+         last_def = l
+
+   return last_def
 
 # performs variable substitution and returns the function implementation (used for inserting variable funcs into other variable funcs)
 # vars are substitution is order dependent, beware of unintended replacing
+
+
 def ucode_redefine_var_func(var_impl, vars, vals):
-    impl = var_impl
-    for i in range(len(vars)):
+   impl = var_impl
+   for i in range(len(vars)):
       impl = impl.replace(str(vars[i]), str(vals[i]))
-    
-    return impl
+
+   return impl
 
 # == begin ucode ==
 
 # faults
+
 
 fault_align = ucode_define("""
 fault-align
@@ -430,7 +470,7 @@ konec
 
 # note r4 pos = root pos
 
-r_to_r = [ [], [], [], [], [] ]
+r_to_r = [[], [], [], [], []]
 
 # r0
 
@@ -862,7 +902,7 @@ konec
 # instructions
 
 # maps dre iids to ucode instruction funcs
-ins_map = [ [], [], [], [], [], [], [], [], [] ]
+ins_map = [[], [], [], [], [], [], [], [], []]
 
 for gid_map in ins_map:
    for iid in range(81):
@@ -920,7 +960,23 @@ ins_map[1][7] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to
 ins_map[1][8] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r2-r4", r_to_r[4][2], r_to_r[2][4]))
 ins_map[1][9] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r3-r4", r_to_r[4][3], r_to_r[3][4]))
 
-print("  swp - iids: 0 - 9")
+if detailed_print:
+   print(
+      """
+swp - swap two regs
+   0 - [1 0 0] - r0 <-> r1
+   1 - [1 0 1] - r0 <-> r2
+   2 - [1 0 2] - r0 <-> r3
+   3 - [1 0 3] - r0 <-> r4
+   4 - [1 0 4] - r1 <-> r2
+   5 - [1 0 5] - r1 <-> r3
+   6 - [1 0 6] - r1 <-> r4
+   7 - [1 0 7] - r2 <-> r3
+   8 - [1 0 8] - r2 <-> r4
+   9 - [1 1 0] - r3 <-> r4 """)
+
+if not detailed_print:
+   print("  swp - iids: 0 - 9")
 
 # wll ins
 # var - variable id
@@ -955,13 +1011,19 @@ konec
 i = 10
 pre_i = i
 
+if detailed_print:
+   print("\nwll - copy from reg2 to reg")
+
 for fr in range(5):
    for sr in range(5):
       if not fr == sr:
          ins_map[1][i] = ucode_instantiate_var(wll_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+         if detailed_print:
+            print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
          i += 1
 
-print(f"  wll - iids: {pre_i} - {i - 1}")
+if not detailed_print:
+   print(f"  wll - iids: {pre_i} - {i - 1}")
 
 # wlr ins
 # var - variable id
@@ -1002,13 +1064,20 @@ konec
 
 pre_i = i
 
+if detailed_print:
+   print("\nwlr - copy from reg2 to ram (adr in reg)")
+
+
 for fr in range(5):
    for sr in range(5):
       if not fr == sr:
          ins_map[1][i] = ucode_instantiate_var(wlr_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p0 to p1]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_r[fr][sr], r_to_op0[sr]))
+         if detailed_print:
+            print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
          i += 1
 
-print(f"  wlr - iids: {pre_i} - {i - 1}")
+if not detailed_print:
+   print(f"  wlr - iids: {pre_i} - {i - 1}")
 
 # wrl ins
 # var - variable id
@@ -1054,13 +1123,20 @@ konec
 
 pre_i = i
 
+if detailed_print:
+   print("\nwrl - copy from ram (adr in reg2) to reg")
+
+
 for fr in range(5):
    for sr in range(5):
       if not fr == sr:
          ins_map[1][i] = ucode_instantiate_var(wrl_var, ("[var]", "[root to p1]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][sr], r_to_op0[fr], r_to_op0[sr]))
+         if detailed_print:
+            print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
          i += 1
 
-print(f"  wrl - iids: {pre_i} - {i - 1}")
+if not detailed_print:
+   print(f"  wrl - iids: {pre_i} - {i - 1}")
 
 # drl ins
 # root to p0 - func to move from root to dest
@@ -1081,11 +1157,18 @@ konec
 
 pre_i = i
 
+if detailed_print:
+   print("\ndrl - drain reg")
+
+
 for fr in range(5):
    ins_map[1][i] = ucode_instantiate_var(drl_var, ("[var]", "[root to p0]"), (f"r{fr}", r_to_r[4][fr]))
+   if detailed_print:
+      print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
    i += 1
 
-print(f"  drl - iids: {pre_i} - {i - 1}")
+if not detailed_print:
+   print(f"  drl - iids: {pre_i} - {i - 1}")
 
 # drr ins
 # root to p0 - func to move from root to adr_source
@@ -1113,11 +1196,18 @@ konec
 
 pre_i = i
 
+if detailed_print:
+   print("\ndrr - drain ram (adr in reg)")
+
+
 for fr in range(5):
    ins_map[1][i] = ucode_instantiate_var(drr_var, ("[var]", "[root to p0]", "[p0 to op0]"), (f"r{fr}", r_to_r[4][fr], r_to_op0[fr]))
+   if detailed_print:
+      print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
    i += 1
 
-print(f"  drr - iids: {pre_i} - {i - 1}")
+if not detailed_print:
+   print(f"  drr - iids: {pre_i} - {i - 1}")
 
 print("")
 
@@ -1264,16 +1354,22 @@ konec
 
 pre_i = i
 
+if detailed_print:
+   print("\nuadd - add register 2 to register")
+
 for fr in range(4):
    for sr in range(4):
       if not fr == sr:
          ins_map[2][i] = ucode_instantiate_var(uadd_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
       else:
          ins_map[2][i] = ucode_instantiate_var(uadd_same_term_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+      if detailed_print:
+         print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
       i += 1
 
 
-print(f"  uadd - iids: {pre_i} - {i - 1}")
+if not detailed_print:
+   print(f"  uadd - iids: {pre_i} - {i - 1}")
 
 # usub ins
 # root to p0 - func to move from root to term 1
@@ -1410,18 +1506,26 @@ konec
 
 pre_i = i
 
+if detailed_print:
+   print("\nusub - subtract register 2 from register")
+
 for fr in range(4):
    for sr in range(4):
-         if not fr == sr:
-            ins_map[2][i] = ucode_instantiate_var(usub_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
-            i += 1
-         # else:
-         #    ins_map[2][i] = ucode_instantiate_var(usub_same_term_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
-         # i += 1
+      if not fr == sr:
+         ins_map[2][i] = ucode_instantiate_var(usub_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+         if detailed_print:
+            print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
+         i += 1
+      # else:
+      #   ins_map[2][i] = ucode_instantiate_var(usub_same_term_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+      # i += 1
 
-print(f"  usub - iids: {pre_i} - {i - 1}")
+if not detailed_print:
+   print(f"  usub - iids: {pre_i} - {i - 1}")
 
 # umul ins
+
+# RESERVE UMUL
 
 umul_var = f"""
 umul<[var]>
@@ -1429,8 +1533,76 @@ umul<[var]>
 konec
 """
 
-print("")
+pre_i = i
 
+if detailed_print:
+   print("\numul - multiply register by register 2 TODO - RESERVED")
+
+for fr in range(4):
+   for sr in range(4):
+      if not fr == sr:
+         ins_map[2][i] = ucode_instantiate_var(usub_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+         if detailed_print:
+            print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
+         i += 1
+
+if not detailed_print:
+   print(f"  umul - iids: {pre_i} - {i - 1} TODO - RESERVED")
+
+# uinc ins
+
+uinc_var = f"""
+uinc<[var]>
+   {root_align}
+   {inc_and_carry}
+   [root to p0]
+   {inc_and_carry}
+   {root_align}
+end
+"""
+
+pre_i = i
+
+if detailed_print:
+   print("\nuinc - increment register")
+
+for fr in range(4):
+   ins_map[2][i] = ucode_instantiate_var(
+      uinc_var, ("[var]", "[root to p0]"), (f"r{fr}", r_to_r[4][fr]))
+   if detailed_print:
+      print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr}")
+   i += 1
+
+if not detailed_print:
+   print(f"  uinc - iids: {pre_i} - {i - 1}")
+
+
+# udec ins
+
+udec_var = f"""
+udec<[var]>
+   {root_align}
+   {inc_and_carry}
+   [root to p0]")
+   {sub_one_and_carry}
+   {root_align}
+end
+"""
+
+pre_i = i
+
+if detailed_print:
+   print("\nudec - decrement register")
+
+for fr in range(4):
+   ins_map[2][i] = ucode_instantiate_var(
+      udec_var, ("[var]", "[root to p0]"), (f"r{fr}", r_to_r[4][fr]))
+   if detailed_print:
+      print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr}")
+   i += 1
+
+if not detailed_print:
+   print(f"  udec - iids: {pre_i} - {i - 1}")
 
 
 print("")
@@ -1438,8 +1610,6 @@ print("")
 print("control - gid: 3")
 
 i = 0
-
-
 
 # dre block
 
@@ -1596,13 +1766,17 @@ for gid in ins_map:
 print(f"root dre block usage: {round(dre_usage / (9 * 81) * 100, 2)}%")
 
 # maps instructions from ins_map to the var dre block
+
+
 def map_dre_gid_var(gid):
    _impl = dre_gid_var
 
    for biid in range(0, 81, 9):
-      _impl = ucode_redefine_var_func(_impl, (f"[ins-{biid}-0]", f"[ins-{biid}-1]", f"[ins-{biid}-2]", f"[ins-{biid}-3]", f"[ins-{biid}-4]", f"[ins-{biid}-5]", f"[ins-{biid}-6]", f"[ins-{biid}-7]", f"[ins-{biid}-8]"), (ins_map[gid][biid + 0], ins_map[gid][biid + 1], ins_map[gid][biid + 2], ins_map[gid][biid + 3], ins_map[gid][biid + 4], ins_map[gid][biid + 5], ins_map[gid][biid + 6], ins_map[gid][biid + 7], ins_map[gid][biid + 8]))
+      _impl = ucode_redefine_var_func(_impl, (f"[ins-{biid}-0]", f"[ins-{biid}-1]", f"[ins-{biid}-2]", f"[ins-{biid}-3]", f"[ins-{biid}-4]", f"[ins-{biid}-5]", f"[ins-{biid}-6]", f"[ins-{biid}-7]", f"[ins-{biid}-8]"), (
+         ins_map[gid][biid + 0], ins_map[gid][biid + 1], ins_map[gid][biid + 2], ins_map[gid][biid + 3], ins_map[gid][biid + 4], ins_map[gid][biid + 5], ins_map[gid][biid + 6], ins_map[gid][biid + 7], ins_map[gid][biid + 8]))
 
    return _impl
+
 
 dre = ucode_define(f"""
 {ucode_redefine_var_func(map_dre_gid_var(0), ("[gid]", "[restore func]"), (0, "krok"))}
@@ -1677,8 +1851,8 @@ konec
 main = ucode_define("""
 __main__
    dokud není sever
-      __fetch__
-      __dre__
+     __fetch__
+     __dre__
    konec
 konec
 """)
@@ -1693,6 +1867,43 @@ __fetch__
    address
 konec
 """)
+
+# == set world ==
+
+pre_world = """
+Velikost města: 20, 20
+Pozice Karla: 7, 1   
+Otočení Karla: VÝCHOD 
+Umístění domova: 7, 1 
+Definice města:      
+"""
+
+out.write(pre_world)
+
+world = """
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+....................
+"""
+out.write(world)
+
 
 # == end ucode ==
 

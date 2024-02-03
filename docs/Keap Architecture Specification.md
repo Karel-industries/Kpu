@@ -63,12 +63,12 @@ Register arguments are packed as *permutations*. Addresses can be read only from
 
 | iid | name | description |
 | ---- | ---- | ---- |
-| `0-11` | `uadd` | Adds unsigned value in reg2 to reg. Saves result to reg. |
-| `12-23` | `usub` | Subtracts unsigned value in reg2 from reg. Saves result to reg |
-| `24-35` | `umul` | Multiplies unsigned reg and reg2 and saves result to reg. |
+| `0-15` | `uadd` | Adds unsigned value in reg2 to reg. Saves result to reg. |
+| `16-27` | `usub` | Subtracts unsigned value in reg2 from reg. Saves result to reg |
+| `28-39` | `umul` | Multiplies unsigned reg and reg2 and saves result to reg. |
 |  | `udiv` | Long Divides unsigned reg by reg2 and saves result to reg. |
-| `36-39` | `uinc` | Increments unsigned reg by 1 |
-| `40-43` | `udec` | Decrements unsigned reg by 1 |
+| `40-43` | `uinc` | Increments unsigned reg by 1 |
+| `44-47` | `udec` | Decrements unsigned reg by 1 |
 |  | `sadd` | Adds signed value in reg2 to reg. Saves result to reg. |
 |  | `ssub` | Subtracts signed value in reg2 from reg. Saves result to reg |
 |  | `smul` | Multiplies signed reg and reg2 and saves result to reg. |
