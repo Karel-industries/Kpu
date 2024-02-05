@@ -1,10 +1,39 @@
 #!/bin/python3
+
+from pprint import pprint
+
+
+detailed_print = False
+
+csv_path = "Keap/KeapV1.csv"
+csv_file = []
+
+with open(csv_path, "r") as f:
+   lines = f.readlines()
+   for line in lines:
+      csv_file.append(line.lstrip().rstrip().split(","))
+   csv_file.pop(0)
+
+instructions = {}
+
+for line in csv_file:
+   if len(line) == 5:
+      gid, iid, ins, reg0, reg1 = line
+      if not ins in list(instructions.keys()):
+         instructions[ins] = []
+      instructions[ins].append([gid, iid, reg0, reg1])
+
+   else:
+      gid, iid, ins, reg0 = line
+      if not ins in list(instructions.keys()):
+         instructions[ins] = []
+      instructions[ins].append([gid, iid, reg0])
+
+
 arch = "KPU"
 
 major = "1b"
 minor = "24-main"
-
-detailed_print = True
 
 out = open(f"{arch}v{major}.{minor}.K99", "w")
 print(f"KPUv{major}.{minor} stats")
@@ -908,11 +937,11 @@ for gid_map in ins_map:
    for iid in range(81):
       gid_map.append(_f_unknown_instruction)
 
-print("reserving extended group - gid: 0")
+#print("reserving extended group - gid: 0")
 
-print("")
+#print("")
 
-print("memory instruction group - gid: 1")
+#print("memory instruction group - gid: 1")
 
 # swp ins
 # var - variable id
@@ -949,34 +978,24 @@ swp<[var]>
 konec
 """
 
-ins_map[1][0] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r0-r1", r_to_r[4][0], r_to_r[0][1]))
-ins_map[1][1] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r0-r2", r_to_r[4][0], r_to_r[0][2]))
-ins_map[1][2] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r0-r3", r_to_r[4][0], r_to_r[0][3]))
-ins_map[1][3] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r0-r4", r_to_r[4][0], r_to_r[0][4]))
-ins_map[1][4] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r1-r2", r_to_r[4][1], r_to_r[1][2]))
-ins_map[1][5] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r1-r3", r_to_r[4][1], r_to_r[1][3]))
-ins_map[1][6] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r1-r4", r_to_r[4][1], r_to_r[1][4]))
-ins_map[1][7] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r2-r3", r_to_r[4][2], r_to_r[2][3]))
-ins_map[1][8] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r2-r4", r_to_r[4][2], r_to_r[2][4]))
-ins_map[1][9] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r3-r4", r_to_r[4][3], r_to_r[3][4]))
 
-if detailed_print:
-   print(
-      """
-swp - swap two regs
-   0 - [1 0 0] - r0 <-> r1
-   1 - [1 0 1] - r0 <-> r2
-   2 - [1 0 2] - r0 <-> r3
-   3 - [1 0 3] - r0 <-> r4
-   4 - [1 0 4] - r1 <-> r2
-   5 - [1 0 5] - r1 <-> r3
-   6 - [1 0 6] - r1 <-> r4
-   7 - [1 0 7] - r2 <-> r3
-   8 - [1 0 8] - r2 <-> r4
-   9 - [1 1 0] - r3 <-> r4 """)
+for ins_data in instructions["swp"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), (f"r{int(ins_data[2])}-r{int(ins_data[3])}", r_to_r[4][int(ins_data[2])], r_to_r[int(ins_data[2])][int(ins_data[3])]))
 
-if not detailed_print:
-   print("  swp - iids: 0 - 9")
+#ins_map[1][0] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r0-r1", r_to_r[4][0], r_to_r[0][1]))
+#ins_map[1][1] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r0-r2", r_to_r[4][0], r_to_r[0][2]))
+#ins_map[1][2] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r0-r3", r_to_r[4][0], r_to_r[0][3]))
+#ins_map[1][3] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r0-r4", r_to_r[4][0], r_to_r[0][4]))
+#ins_map[1][4] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r1-r2", r_to_r[4][1], r_to_r[1][2]))
+#ins_map[1][5] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r1-r3", r_to_r[4][1], r_to_r[1][3]))
+#ins_map[1][6] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r1-r4", r_to_r[4][1], r_to_r[1][4]))
+#ins_map[1][7] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r2-r3", r_to_r[4][2], r_to_r[2][3]))
+#ins_map[1][8] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r2-r4", r_to_r[4][2], r_to_r[2][4]))
+#ins_map[1][9] = ucode_instantiate_var(swp_var, ("[var]", "[root to p0]", "[p0 to p1]"), ("r3-r4", r_to_r[4][3], r_to_r[3][4]))
+
+
+#if not detailed_print:
+#   print("  swp - iids: 0 - 9")
 
 # wll ins
 # var - variable id
@@ -1008,22 +1027,26 @@ wll<[var]>
 konec
 """
 
-i = 10
-pre_i = i
+#i = 10
+#pre_i = i
 
-if detailed_print:
-   print("\nwll - copy from reg2 to reg")
+#if detailed_print:
+#   print("\nwll - copy from reg2 to reg")
 
-for fr in range(5):
-   for sr in range(5):
-      if not fr == sr:
-         ins_map[1][i] = ucode_instantiate_var(wll_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
-         if detailed_print:
-            print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
-         i += 1
+for ins_data in instructions["wll"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(wll_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{int(ins_data[2])}-r{int(ins_data[3])}", r_to_r[4][int(ins_data[2])], r_to_op0[int(ins_data[2])], r_to_op0[int(ins_data[3])]))
 
-if not detailed_print:
-   print(f"  wll - iids: {pre_i} - {i - 1}")
+
+#for fr in range(5):
+#   for sr in range(5):
+#      if not fr == sr:
+#         ins_map[1][i] = ucode_instantiate_var(wll_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+#         if detailed_print:
+#            print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
+#         i += 1
+
+#if not detailed_print:
+#   print(f"  wll - iids: {pre_i} - {i - 1}")
 
 # wlr ins
 # var - variable id
@@ -1062,22 +1085,24 @@ wlr<[var]>
 konec
 """
 
-pre_i = i
+#pre_i = i
 
-if detailed_print:
-   print("\nwlr - copy from reg2 to ram (adr in reg)")
+#if detailed_print:
+#   print("\nwlr - copy from reg2 to ram (adr in reg)")
 
+for ins_data in instructions["wlr"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(wlr_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p0 to p1]", "[p1 to op0]"), (f"r{int(ins_data[2])}-r{int(ins_data[3])}", r_to_r[4][int(ins_data[2])], r_to_op0[int(ins_data[2])], r_to_r[int(ins_data[2])][int(ins_data[3])], r_to_op0[int(ins_data[3])]))
 
-for fr in range(5):
-   for sr in range(5):
-      if not fr == sr:
-         ins_map[1][i] = ucode_instantiate_var(wlr_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p0 to p1]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_r[fr][sr], r_to_op0[sr]))
-         if detailed_print:
-            print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
-         i += 1
+#for fr in range(5):
+#   for sr in range(5):
+#      if not fr == sr:
+#         ins_map[1][i] = ucode_instantiate_var(wlr_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p0 to p1]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_r[fr][sr], r_to_op0[sr]))
+#         if detailed_print:
+#            print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
+#         i += 1
 
-if not detailed_print:
-   print(f"  wlr - iids: {pre_i} - {i - 1}")
+#if not detailed_print:
+#   print(f"  wlr - iids: {pre_i} - {i - 1}")
 
 # wrl ins
 # var - variable id
@@ -1121,22 +1146,26 @@ wrl<[var]>
 konec
 """
 
-pre_i = i
+#pre_i = i
 
-if detailed_print:
-   print("\nwrl - copy from ram (adr in reg2) to reg")
+#if detailed_print:
+#   print("\nwrl - copy from ram (adr in reg2) to reg")
 
 
-for fr in range(5):
-   for sr in range(5):
-      if not fr == sr:
-         ins_map[1][i] = ucode_instantiate_var(wrl_var, ("[var]", "[root to p1]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][sr], r_to_op0[fr], r_to_op0[sr]))
-         if detailed_print:
-            print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
-         i += 1
+for ins_data in instructions["wrl"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(wrl_var, ("[var]", "[root to p1]", "[p0 to op0]", "[p1 to op0]"), (f"r{int(ins_data[2])}-r{int(ins_data[3])}", r_to_r[4][int(ins_data[3])], r_to_op0[int(ins_data[2])], r_to_op0[int(ins_data[3])]))
 
-if not detailed_print:
-   print(f"  wrl - iids: {pre_i} - {i - 1}")
+
+#for fr in range(5):
+#   for sr in range(5):
+#      if not fr == sr:
+#         ins_map[1][i] = ucode_instantiate_var(wrl_var, ("[var]", "[root to p1]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][sr], r_to_op0[fr], r_to_op0[sr]))
+#         if detailed_print:
+#            print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
+#         i += 1
+
+#if not detailed_print:
+#   print(f"  wrl - iids: {pre_i} - {i - 1}")
 
 # drl ins
 # root to p0 - func to move from root to dest
@@ -1155,20 +1184,22 @@ drl<[var]>
 konec
 """
 
-pre_i = i
+#pre_i = i
 
-if detailed_print:
-   print("\ndrl - drain reg")
+#if detailed_print:
+#   print("\ndrl - drain reg")
 
+for ins_data in instructions["drl"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(drl_var, ("[var]", "[root to p0]"), (f"r{int(ins_data[2])}", r_to_r[4][int(ins_data[2])]))
 
-for fr in range(5):
-   ins_map[1][i] = ucode_instantiate_var(drl_var, ("[var]", "[root to p0]"), (f"r{fr}", r_to_r[4][fr]))
-   if detailed_print:
-      print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
-   i += 1
+#for fr in range(5):
+#   ins_map[1][i] = ucode_instantiate_var(drl_var, ("[var]", "[root to p0]"), (f"r{fr}", r_to_r[4][fr]))
+#   if detailed_print:
+#      print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr}")
+#   i += 1
 
-if not detailed_print:
-   print(f"  drl - iids: {pre_i} - {i - 1}")
+#if not detailed_print:
+#   print(f"  drl - iids: {pre_i} - {i - 1}")
 
 # drr ins
 # root to p0 - func to move from root to adr_source
@@ -1194,26 +1225,28 @@ drr<[var]>
 konec
 """
 
-pre_i = i
+#pre_i = i
 
-if detailed_print:
-   print("\ndrr - drain ram (adr in reg)")
+#if detailed_print:
+#   print("\ndrr - drain ram (adr in reg)")
 
+for ins_data in instructions["drr"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(drr_var, ("[var]", "[root to p0]", "[p0 to op0]"), (f"r{int(ins_data[2])}", r_to_r[4][int(ins_data[2])], r_to_op0[int(ins_data[2])]))
 
-for fr in range(5):
-   ins_map[1][i] = ucode_instantiate_var(drr_var, ("[var]", "[root to p0]", "[p0 to op0]"), (f"r{fr}", r_to_r[4][fr], r_to_op0[fr]))
-   if detailed_print:
-      print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
-   i += 1
+#for fr in range(5):
+#   ins_map[1][i] = ucode_instantiate_var(drr_var, ("[var]", "[root to p0]", "[p0 to op0]"), (f"r{fr}", r_to_r[4][fr], r_to_op0[fr]))
+#   if detailed_print:
+#      print(f"   {i} - [1 {int(i/9)} {i%9}] - r{fr}")
+#   i += 1
 
-if not detailed_print:
-   print(f"  drr - iids: {pre_i} - {i - 1}")
+#if not detailed_print:
+#   print(f"  drr - iids: {pre_i} - {i - 1}")
 
-print("")
+#print("")
 
-print("short kyte basic arithmetic - gid: 2")
+#print("short kyte basic arithmetic - gid: 2")
 
-i = 0
+#i = 0
 
 # uadd ins
 # root to p0 - func to move from root to addition term 1
@@ -1352,24 +1385,29 @@ uadd<[var]>
 konec
 """
 
-pre_i = i
+#pre_i = i
 
-if detailed_print:
-   print("\nuadd - add register 2 to register")
+#if detailed_print:
+#   print("\nuadd - add register 2 to register")
 
-for fr in range(4):
-   for sr in range(4):
-      if not fr == sr:
-         ins_map[2][i] = ucode_instantiate_var(uadd_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
-      else:
-         ins_map[2][i] = ucode_instantiate_var(uadd_same_term_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
-      if detailed_print:
-         print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
-      i += 1
+for ins_data in instructions["uadd"]:
+   if not int(ins_data[2]) == int(ins_data[3]):
+      ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(uadd_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{int(ins_data[2])}-r{int(ins_data[3])}", r_to_r[4][int(ins_data[2])], r_to_op0[int(ins_data[2])], r_to_op0[int(ins_data[3])]))
+   else:
+      ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(uadd_same_term_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{int(ins_data[2])}-r{int(ins_data[3])}", r_to_r[4][int(ins_data[2])], r_to_op0[int(ins_data[2])], r_to_op0[int(ins_data[3])]))
 
-
-if not detailed_print:
-   print(f"  uadd - iids: {pre_i} - {i - 1}")
+#for fr in range(4):
+#   for sr in range(4):
+#      if not fr == sr:
+#         ins_map[2][i] = ucode_instantiate_var(uadd_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+#      else:
+#         ins_map[2][i] = ucode_instantiate_var(uadd_same_term_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+#      if detailed_print:
+#         print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
+#      i += 1
+      
+#if not detailed_print:
+#   print(f"  uadd - iids: {pre_i} - {i - 1}")
 
 
 
@@ -1506,24 +1544,31 @@ konec
 # konec
 # """
 
-pre_i = i
+#pre_i = i
 
-if detailed_print:
-   print("\nusub - subtract register 2 from register")
+#if detailed_print:
+#   print("\nusub - subtract register 2 from register")
 
-for fr in range(4):
-   for sr in range(4):
-      if not fr == sr:
-         ins_map[2][i] = ucode_instantiate_var(usub_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
-         if detailed_print:
-            print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
-         i += 1
-      # else:
-      #   ins_map[2][i] = ucode_instantiate_var(usub_same_term_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
-      # i += 1
+for ins_data in instructions["usub"]:
+   if not int(ins_data[2]) == int(ins_data[3]):
+      ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(usub_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{int(ins_data[2])}-r{int(ins_data[3])}", r_to_r[4][int(ins_data[2])], r_to_op0[int(ins_data[2])], r_to_op0[int(ins_data[3])]))   
+   #else:
+   #   ins_map[2][i] = ucode_instantiate_var(usub_same_term_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
 
-if not detailed_print:
-   print(f"  usub - iids: {pre_i} - {i - 1}")
+
+#for fr in range(4):
+#   for sr in range(4):
+#      if not fr == sr:
+#         ins_map[2][i] = ucode_instantiate_var(usub_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+#         if detailed_print:
+#            print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
+#         i += 1
+#      # else:
+#      #   ins_map[2][i] = ucode_instantiate_var(usub_same_term_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+#      # i += 1
+
+#if not detailed_print:
+#   print(f"  usub - iids: {pre_i} - {i - 1}")
 
 # umul ins
 
@@ -1535,21 +1580,24 @@ umul<[var]>
 konec
 """
 
-pre_i = i
+#pre_i = i
 
-if detailed_print:
-   print("\numul - multiply register by register 2 TODO - RESERVED")
+#if detailed_print:
+#   print("\numul - multiply register by register 2 TODO - RESERVED")
 
-for fr in range(4):
-   for sr in range(4):
-      if not fr == sr:
-         ins_map[2][i] = ucode_instantiate_var(umul_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
-         if detailed_print:
-            print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
-         i += 1
+for ins_data in instructions["umul"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(umul_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{int(ins_data[2])}-r{int(ins_data[3])}", r_to_r[4][int(ins_data[2])], r_to_op0[int(ins_data[2])], r_to_op0[int(ins_data[3])]))
 
-if not detailed_print:
-   print(f"  umul - iids: {pre_i} - {i - 1} TODO - RESERVED")
+#for fr in range(4):
+#   for sr in range(4):
+#      if not fr == sr:
+#         ins_map[2][i] = ucode_instantiate_var(umul_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+#         if detailed_print:
+#            print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
+#         i += 1
+
+#if not detailed_print:
+#   print(f"  umul - iids: {pre_i} - {i - 1} TODO - RESERVED")
 
 
 # udiv ins
@@ -1562,21 +1610,25 @@ udiv<[var]>
 konec
 """
 
-pre_i = i
+#pre_i = i
 
-if detailed_print:
-   print("\nudiv - divide register by register 2 TODO - RESERVED")
+#if detailed_print:
+#   print("\nudiv - divide register by register 2 TODO - RESERVED")
 
-for fr in range(4):
-   for sr in range(4):
-      if not fr == sr:
-         ins_map[2][i] = ucode_instantiate_var(udiv_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
-         if detailed_print:
-            print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
-         i += 1
+for ins_data in instructions["udiv"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(udiv_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{int(ins_data[2])}-r{int(ins_data[3])}", r_to_r[4][int(ins_data[2])], r_to_op0[int(ins_data[2])], r_to_op0[int(ins_data[3])]))
 
-if not detailed_print:
-   print(f"  udiv - iids: {pre_i} - {i - 1} TODO - RESERVED")
+
+#for fr in range(4):
+#   for sr in range(4):
+#      if not fr == sr:
+#         ins_map[2][i] = ucode_instantiate_var(udiv_var, ("[var]", "[root to p0]", "[p0 to op0]", "[p1 to op0]"), (f"r{fr}-r{sr}", r_to_r[4][fr], r_to_op0[fr], r_to_op0[sr]))
+#         if detailed_print:
+#            print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr} <- r{sr}")
+#         i += 1
+
+#if not detailed_print:
+#   print(f"  udiv - iids: {pre_i} - {i - 1} TODO - RESERVED")
 
 
 
@@ -1592,20 +1644,23 @@ uinc<[var]>
 konec
 """
 
-pre_i = i
+#pre_i = i
 
-if detailed_print:
-   print("\nuinc - increment register")
+#if detailed_print:
+#   print("\nuinc - increment register")
 
-for fr in range(4):
-   ins_map[2][i] = ucode_instantiate_var(
-      uinc_var, ("[var]", "[root to p0]"), (f"r{fr}", r_to_r[4][fr]))
-   if detailed_print:
-      print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr}")
-   i += 1
+for ins_data in instructions["uinc"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(uinc_var, ("[var]", "[root to p0]"), (f"r{int(ins_data[2])}", r_to_r[4][int(ins_data[2])]))
 
-if not detailed_print:
-   print(f"  uinc - iids: {pre_i} - {i - 1}")
+#for fr in range(4):
+#   ins_map[2][i] = ucode_instantiate_var(
+#      uinc_var, ("[var]", "[root to p0]"), (f"r{fr}", r_to_r[4][fr]))
+#   if detailed_print:
+#      print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr}")
+#   i += 1
+
+#if not detailed_print:
+#   print(f"  uinc - iids: {pre_i} - {i - 1}")
 
 
 # udec ins
@@ -1620,25 +1675,30 @@ udec<[var]>
 konec
 """
 
-pre_i = i
+#pre_i = i
 
-if detailed_print:
-   print("\nudec - decrement register")
-
-for fr in range(4):
-   ins_map[2][i] = ucode_instantiate_var(
-      udec_var, ("[var]", "[root to p0]"), (f"r{fr}", r_to_r[4][fr]))
-   if detailed_print:
-      print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr}")
-   i += 1
-
-if not detailed_print:
-   print(f"  udec - iids: {pre_i} - {i - 1}")
+#if detailed_print:
+#   print("\nudec - decrement register")
 
 
-print("")
+for ins_data in instructions["udec"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(udec_var, ("[var]", "[root to p0]"), (f"r{int(ins_data[2])}", r_to_r[4][int(ins_data[2])]))
+   
 
-print("control - gid: 3")
+#for fr in range(4):
+#   ins_map[2][i] = ucode_instantiate_var(
+#      udec_var, ("[var]", "[root to p0]"), (f"r{fr}", r_to_r[4][fr]))
+#   if detailed_print:
+#      print(f"   {i} - [2 {int(i/9)} {i%9}] - r{fr}")
+#   i += 1
+
+#if not detailed_print:
+#   print(f"  udec - iids: {pre_i} - {i - 1}")
+
+
+#print("")
+
+#print("control - gid: 3")
 
 i = 0
 
