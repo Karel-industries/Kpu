@@ -3,7 +3,8 @@
 from pprint import pprint
 
 
-detailed_print = False
+save_copy_as_KPU = True # saves the KPUv1b... file as KPU.K99
+save_to_Keap_ASM = True # saves a copy to Keap/assembly folder
 
 csv_path = "Keap/KeapV1.csv"
 csv_file = []
@@ -2000,3 +2001,28 @@ out.write(world.replace("\n","", 1))
 # == end ucode ==
 
 out.close()
+
+
+# == save copies ==
+
+data = []
+
+with open(f"{arch}v{major}.{minor}.K99", "r") as f:
+   for line in f.readlines():
+      data.append(line)
+
+
+# == save copy as KPU.K99 ==
+
+if save_copy_as_KPU:
+   with open(f"{arch}.K99", "w") as f:
+      for line in data:
+         f.write(line)
+
+
+# == save copy to Keap/assembly ==
+
+if save_to_Keap_ASM:
+   with open(f"Keap/asembly/{arch}.K99", "w") as f:
+      for line in data:
+         f.write(line)
