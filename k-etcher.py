@@ -24,17 +24,23 @@ for line in csv_file:
          instructions[ins] = []
       instructions[ins].append([gid, iid, reg0, reg1])
 
-   else:
+   elif len(line) == 4:
       gid, iid, ins, reg0 = line
       if not ins in list(instructions.keys()):
          instructions[ins] = []
       instructions[ins].append([gid, iid, reg0])
 
+   elif len(line) == 8:
+      gid, iid, ins, _, _, cond, bit, _ = line
+      if not ins in list(instructions.keys()):
+         instructions[ins] = []
+      instructions[ins].append([gid, iid, cond, bit])
+
 
 arch = "KPU"
 
 major = "1b"
-minor = "24-main"
+minor = "29-main"
 
 out = open(f"{arch}v{major}.{minor}.K99", "w")
 print(f"KPUv{major}.{minor} stats")
@@ -118,6 +124,18 @@ def ucode_redefine_var_func(var_impl, vars, vals):
       impl = impl.replace(str(vars[i]), str(vals[i]))
 
    return impl
+
+# gets the expected name of the func returned by ucode_define without writing it to out
+
+def ucode_dry_define(impl):
+   lines = impl.split('\n')
+   last_def = "s"
+
+   for l in lines:
+      if not l.startswith(" ") and (l.strip() != "konec" and l != ""):
+         last_def = l
+
+   return last_def
 
 # == begin ucode ==
 
@@ -319,7 +337,43 @@ inc-and-carry
 konec
 """)
 
-address = ucode_define(f"""
+inc_and_carry_no_inv = ucode_define(f"""
+inc-and-ignore-no-inv
+   když je značka
+      zvedni
+   konec, jinak
+      fill
+   konec
+konec
+
+inc-and-carry2-no-inv
+   když je značka
+      zvedni
+   konec, jinak
+      krok
+      inc-and-ignore-no-inv
+      {behind}
+      krok
+      {behind}
+      fill
+   konec
+konec
+
+inc-and-carry-no-inv
+   když je značka
+      zvedni
+   konec, jinak
+      krok
+      inc-and-carry2-no-inv
+      {behind}
+      krok
+      {behind}
+      fill
+   konec
+konec
+""")
+
+adr_step = ucode_define(f"""
 adr-step
    když není zeď
       krok
@@ -337,7 +391,9 @@ adr-step
       {behind}
    konec
 konec
+""")
 
+address = ucode_define(f"""
 adr-setup
    {root_align}
    {behind}
@@ -354,7 +410,7 @@ address3
       zvedni
       address3
       opakuj 81-krát
-         adr-step
+         {adr_step}
       konec
    konec, jinak
       krok
@@ -367,7 +423,7 @@ address2
       zvedni
       address2
       opakuj 9-krát
-         adr-step
+         {adr_step}
       konec
    konec, jinak
       krok
@@ -379,7 +435,7 @@ address1
    když je značka
       zvedni
       address1
-      adr-step
+      {adr_step}
    konec, jinak
       krok
       address2
@@ -474,6 +530,7 @@ set-underflow
          polož
       konec
    konec, jinak
+      polož
    konec
 konec
 """)
@@ -495,6 +552,68 @@ set-overflow
    konec
 konec
 """)
+
+set_value = []
+
+set_value.append("no-op")
+
+set_value.append(ucode_define(f"""
+write-value<1>
+   opakuj 1-krát
+      polož
+   konec
+konec
+"""))
+
+set_value.append(ucode_define(f"""
+write-value<2>
+   opakuj 2-krát
+      polož
+   konec
+konec
+"""))
+
+set_value.append(ucode_define(f"""
+write-value<3>
+   opakuj 3-krát
+      polož
+   konec
+konec
+"""))
+
+set_value.append(ucode_define(f"""
+write-value<4>
+   opakuj 4-krát
+      polož
+   konec
+konec
+"""))
+
+set_value.append(ucode_define(f"""
+write-value<5>
+   opakuj 5-krát
+      polož
+   konec
+konec
+"""))
+
+set_value.append(ucode_define(f"""
+write-value<6>
+   opakuj 6-krát
+      polož
+   konec
+konec
+"""))
+
+set_value.append(ucode_define(f"""
+write-value<7>
+   opakuj 7-krát
+      polož
+   konec
+konec
+"""))
+
+set_value.append(fill)
 
 # internal - move funcs
 
@@ -928,6 +1047,245 @@ copy-prefetch<[var]>
    move-kyte<cpf-from-[var]>
 konec
 """
+
+# test trit 0 vars:
+# var - variable id
+# read 0 - func called when trit value is equal to 0
+# read 1 - func called when trit value is equal to 1
+# read 2 - func called when trit value is equal to 2
+
+tt0_var = f"""
+test-trit-0-2<[var]>
+   když není značka
+      [read 2]
+   konec, jinak
+      zvedni
+      test-trit-0<[var]>
+      polož
+   konec
+konec
+
+test-trit-0-1<[var]>
+   když není značka
+      [read 1]
+   konec, jinak
+      zvedni
+      test-trit-0-2<[var]>
+      polož
+   konec
+konec
+
+test-trit-0<[var]>
+   když není značka
+      [read 0]
+   konec, jinak
+      zvedni
+      test-trit-0-1<[var]>
+      polož
+   konec
+konec
+"""
+
+# test trit 1 vars:
+# var - variable id
+# read 0 - func called when trit value is equal to 0
+# read 1 - func called when trit value is equal to 1
+# read 2 - func called when trit value is equal to 2
+
+tt1_step_var = f"""
+test-trit-1-step<[var]>
+   když není značka
+      [mid]
+   konec, jinak
+      zvedni
+      když není značka
+         polož
+         [mid]
+      konec, jinak
+         zvedni
+         když není značka
+            polož
+            polož
+            [mid]
+         konec, jinak
+            zvedni
+            [next]
+            polož
+            polož
+            polož
+         konec
+      konec
+   konec
+konec
+"""
+
+tt1_var = f"""
+
+{ucode_redefine_var_func(tt1_step_var, ("[var]", "[mid]", "[next]"), ("[var]-2", "[read 2]", _f_unreachable))}
+{ucode_redefine_var_func(tt1_step_var, ("[var]", "[mid]", "[next]"), ("[var]-1", "[read 1]", "test-trit-1-step<[var]-2>"))}
+{ucode_redefine_var_func(tt1_step_var, ("[var]", "[mid]", "[next]"), ("[var]-0", "[read 0]", "test-trit-1-step<[var]-1>"))}
+
+test-trit-1<[var]>
+   test-trit-1-step<[var]-0>
+konec
+"""
+
+# condition checks
+# var - variable id
+# success - func called when condition is met
+# fail - func called when condition is not met
+
+cond_check_vars = []
+
+cond_check_vars.append(f"""
+check-eq-success<[var]>
+   [success]
+konec
+
+check-eq-failed<[var]>
+   [fail]
+konec
+
+{ucode_redefine_var_func(tt0_var, ("[var]", "[read 0]", "[read 1]", "[read 2]"), ("eq-[var]", "check-eq-success<[var]>", "check-eq-failed<[var]>", "check-eq-failed<[var]>"))}
+
+check-eq<[var]>
+   test-trit-0<eq-[var]>
+konec
+""")
+
+cond_check_vars.append(f"""
+check-iz-success<[var]>
+   [success]
+   krok
+konec
+
+check-iz-failed<[var]>
+   [fail]
+   krok
+konec
+
+{ucode_redefine_var_func(tt0_var, ("[var]", "[read 0]", "[read 1]", "[read 2]"), ("iz-[var]", "check-iz-failed<[var]>", "check-iz-success<[var]>", "check-iz-failed<[var]>"))}
+
+check-iz<[var]>
+   krok
+   test-trit-0<iz-[var]>
+   {behind}
+   krok
+   {behind}
+konec
+""")
+
+cond_check_vars.append(f"""
+check-of-success<[var]>
+   [success]
+konec
+
+check-of-failed<[var]>
+   [fail]
+konec
+
+{ucode_redefine_var_func(tt1_var, ("[var]", "[read 0]", "[read 1]", "[read 2]"), ("of-[var]", "check-of-failed<[var]>", "check-of-failed<[var]>", "check-of-success<[var]>"))}
+
+check-of<[var]>
+   test-trit-1<of-[var]>
+konec
+""")
+
+cond_check_vars.append(f"""
+check-uf-success<[var]>
+   [success]
+konec
+
+check-uf-failed<[var]>
+   [fail]
+konec
+
+{ucode_redefine_var_func(tt1_var, ("[var]", "[read 0]", "[read 1]", "[read 2]"), ("uf-[var]", "check-uf-failed<[var]>", "check-uf-success<[var]>", "check-uf-failed<[var]>"))}
+
+check-uf<[var]>
+   test-trit-1<uf-[var]>
+konec
+""")
+
+cond_check_vars.append(f"""
+check-nf-success<[var]>
+   [success]
+konec
+
+check-nf-failed<[var]>
+   [fail]
+konec
+
+{ucode_redefine_var_func(tt1_var, ("[var]", "[read 0]", "[read 1]", "[read 2]"), ("nf-[var]", "check-nf-success<[var]>", "check-nf-failed<[var]>", "check-nf-failed<[var]>"))}
+
+check-nf<[var]>
+   test-trit-1<nf-[var]>
+konec
+""")
+
+cond_check_vars.append(f"""
+check-gt-success<[var]>
+   [success]
+konec
+
+check-gt-failed<[var]>
+   [fail]
+konec
+
+{ucode_redefine_var_func(tt0_var, ("[var]", "[read 0]", "[read 1]", "[read 2]"), ("gt-[var]", "check-gt-failed<[var]>", "check-gt-failed<[var]>", "check-gt-success<[var]>"))}
+
+check-gt<[var]>
+   test-trit-0<gt-[var]>
+konec
+""")
+
+cond_check_vars.append(f"""
+check-lt-success<[var]>
+   [success]
+konec
+
+check-lt-failed<[var]>
+   [fail]
+konec
+
+{ucode_redefine_var_func(tt0_var, ("[var]", "[read 0]", "[read 1]", "[read 2]"), ("lt-[var]", "check-lt-success<[var]>", "check-lt-failed<[var]>", "check-lt-failed<[var]>"))}
+
+check-lt<[var]>
+   test-trit-0<lt-[var]>
+konec
+""")
+
+cond_check_vars.append(f"""
+check-ge-success<[var]>
+   [success]
+konec
+
+check-ge-failed<[var]>
+   [fail]
+konec
+
+{ucode_redefine_var_func(tt0_var, ("[var]", "[read 0]", "[read 1]", "[read 2]"), ("ge-[var]", "check-ge-failed<[var]>", "check-ge-success<[var]>", "check-ge-success<[var]>"))}
+
+check-ge<[var]>
+   test-trit-0<ge-[var]>
+konec
+""")
+
+cond_check_vars.append(f"""
+check-le-success<[var]>
+   [success]
+konec
+
+check-le-failed<[var]>
+   [fail]
+konec
+
+{ucode_redefine_var_func(tt0_var, ("[var]", "[read 0]", "[read 1]", "[read 2]"), ("le-[var]", "check-le-success<[var]>", "check-le-success<[var]>", "check-le-failed<[var]>"))}
+
+check-le<[var]>
+   test-trit-0<le-[var]>
+konec
+""")
 
 # instructions
 
@@ -1702,6 +2060,176 @@ for ins_data in instructions["udec"]:
 #print("control - gid: 3")
 
 i = 0
+
+# ce/nce ins
+
+is_re_comp_var = f"""
+is-re-comp-rec<[var]>
+   když není značka
+      [write value]
+   konec, jinak
+      zvedni
+      is-re-comp-rec<[var]>
+      když není značka
+         // more than value
+         [write value]
+         {behind}
+      konec, jinak
+      konec
+      když je jih
+         polož
+      konec, jinak
+         zvedni
+      konec
+   konec
+konec
+
+is-re-comp-rec-res<[var]>
+   když není značka
+      [write value]
+   konec, jinak
+      zvedni
+      is-re-comp-rec-res<[var]>
+      zvedni
+   konec
+konec
+
+is-re-comp<[var]>
+   is-re-comp-rec<[var]>
+   když není značka
+      [write value]
+   konec, jinak
+      když je jih
+         // restore dir from more than value
+         vlevo-vbok
+      konec, jinak
+         // less than value
+         is-re-comp-rec-res<[var]>
+         {right_side}
+      konec
+   konec
+konec
+"""
+
+is_re_var = f"""
+
+{ucode_redefine_var_func(is_re_comp_var, ("[var]", "[write value]"), ("[var]-k0", "[k0]"))}
+{ucode_redefine_var_func(is_re_comp_var, ("[var]", "[write value]"), ("[var]-k1", "[k1]"))}
+{ucode_redefine_var_func(is_re_comp_var, ("[var]", "[write value]"), ("[var]-k2", "[k2]"))}
+
+is-re<[var]>
+   is-re-comp<[var]-k0>
+   když není východ
+      krok
+      is-re-comp<[var]-k1>
+      když není východ
+         krok
+         is-re-comp<[var]-k2>
+         když není východ
+         konec, jinak
+            {shift_right}
+            {shift_right}
+         konec
+      konec, jinak
+         {shift_right}
+      konec
+   konec, jinak
+   konec
+konec
+"""
+
+is_re_subins = []
+for re_data in instructions["re"]:
+   is_re_subins.append(ucode_instantiate_var(is_re_var, ("[var]", "[k0]", "[k1]", "[k2]"), (f"b{int(re_data[3])}", set_value[int(re_data[0])], set_value[int(re_data[1]) // 9], set_value[int(re_data[1]) % 9])))
+
+ce_var = f"""
+ce-step<[var]>
+   vlevo-vbok
+   is-re<b[bit]>
+   když není východ
+      {root_align}
+      {r_to_op0[4]}
+      {op0_to_op[1]}
+      {invert}
+   konec, jinak
+      {adr_step}
+      ce-step<[var]>
+   konec
+   {inc_and_carry_no_inv}
+konec
+
+{ucode_redefine_var_func(copy_fetch_var, ("[var]", "[p0 to op0]", "[p1 to op0]"), ("ce-[var]", r_to_op0[4], op0_to_op[1]))}
+
+ce-mid<[var]>
+   {behind}
+   {op0_to_op[1]}
+   {r_to_op0[4]}
+   {behind}
+konec
+
+{ucode_redefine_var_func(move_kyte_var, ("[var]", "[user place]", "[user mid point]"), ("ce-[var]", "polož", "ce-mid<[var]>"))}
+
+ce-success<[var]>
+   {root_align}
+   {inc_and_carry}
+   {shift_right}
+konec
+
+ce-fail<[var]>
+   {root_align}
+   copy-fetch<ce-[var]>
+   {address}
+   {right_side}
+   ce-step<[var]>
+   {invert}
+   move-kyte<ce-[var]>
+   {shift_right}
+konec
+
+[condition impl]
+
+ce<[var]>
+   {root_align}
+   {shift_right}
+   [condition]
+   {root_align}
+konec
+"""
+
+for ins_data in instructions["ce"]:
+   c_impl = ucode_redefine_var_func(cond_check_vars[int(ins_data[2])], ("[var]", "[success]", "[fail]"), (f"ce-[var]", f"ce-success<[var]>", f"ce-fail<[var]>"))
+
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(ce_var, ("[condition impl]", "[condition]", "[var]", "[bit]"), (c_impl, ucode_dry_define(c_impl), f"c{int(ins_data[2])}-b{int(ins_data[3])}", f"{int(ins_data[3])}"))
+
+# note: ice uses the ce implementation except it swithes the success and fail branches to invert the result
+
+ice_var = f"""
+[condition impl]
+
+ice<[var]>
+   {root_align}
+   {shift_right}
+   [condition]
+   {root_align}
+konec
+"""
+
+for ins_data in instructions["ice"]:
+   c_impl = ucode_redefine_var_func(cond_check_vars[int(ins_data[2])], ("[var]", "[success]", "[fail]"), (f"ice-[var]", f"ce-fail<[var]>", f"ce-success<[var]>"))
+
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(ice_var, ("[condition impl]", "[condition]", "[var]"), (c_impl, ucode_dry_define(c_impl), f"c{int(ins_data[2])}-b{int(ins_data[3])}"))
+
+# re ins (no-op)
+
+re_impl = ucode_define(f"""
+re<>
+   {root_align}
+   {inc_and_carry}
+konec
+""")
+
+for ins_data in instructions["re"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = re_impl
 
 # dre block
 

@@ -183,7 +183,15 @@ A kyte containing a signed integer is encoded and packed as a *balanced ternary*
 
 > unsigned overflow and underflow work as on an real world machine, signed overflow and underflow not tested
 
-## Unsigned Arithmetic
+### ALU flags
+
+The `KPUv1b` stores flags set by arithmetic or compare operations in it's 1-kyte *ALU Flags* register. The flags are packed into kats as trits (base 3) -> two trits per kat
+
+Current layout of the *ALU flags* register:
+- `kat 0` - "less-equal-greter" flag -> trit 0; "normalflow-underflow-overflow" flag -> trit 1
+- `kat 1` - "negative-zero-positive" flag -> trit 1
+
+### Unsigned Arithmetic
 
 Due to how Karel stores tags, trying to increment a cell that already has 8 tags is a hardware fault and must be prevented by the Microcode. But the Microcode is able to check if there are 0 tags which leads to subtraction being *the* basic arithmetic operation on which other operations are derived from.
 
@@ -372,6 +380,6 @@ drain op4
 write op5 to r0
 ```
 
-## Signed (Ternary) Arithmetic
+### Signed (Ternary) Arithmetic
 
 TODO
