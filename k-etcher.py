@@ -2233,12 +2233,13 @@ konec
 for ins_data in instructions["re"]:
    ins_map[int(ins_data[0])][int(ins_data[1])] = re_impl
 
-# halt (stop)
+# halt
 halt_impl = ucode_define(f"""
 halt<>
-   {fault_align}
-   {behind}
-   stop
+   {root_align}
+   dokud není sever
+      vlevo-vbok
+   konec
 konec
 """)  
 
