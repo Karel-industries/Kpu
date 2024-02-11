@@ -18,23 +18,25 @@ with open(csv_path, "r") as f:
 instructions = {}
 
 for line in csv_file:
-   if len(line) == 5:
-      gid, iid, ins, reg0, reg1 = line
-      if not ins in list(instructions.keys()):
-         instructions[ins] = []
-      instructions[ins].append([gid, iid, reg0, reg1])
+      # gid, iid, ins, reg, reg, cond_index, cond_bit
 
-   elif len(line) == 4:
-      gid, iid, ins, reg0 = line
-      if not ins in list(instructions.keys()):
-         instructions[ins] = []
-      instructions[ins].append([gid, iid, reg0])
-
-   elif len(line) == 8:
-      gid, iid, ins, _, _, cond, bit, _ = line
-      if not ins in list(instructions.keys()):
-         instructions[ins] = []
-      instructions[ins].append([gid, iid, cond, bit])
+   
+   if line[3] == "" and line[4] == "": # no reg1 and no reg2
+      if not line[2] in list(instructions.keys()):
+         instructions[line[2]] = []
+      instructions[line[2]].append([line[0], line[1], line[5], line[6]])
+   
+   
+   elif not line[3] == "" and line[4] == "": # has reg1 but no reg2
+      if not line[2] in list(instructions.keys()):
+         instructions[line[2]] = []
+      instructions[line[2]].append([line[0], line[1], line[3]])
+   elif line[3] == "" and not line[4] == "": # no reg1 but has reg2
+      pass
+   else: # has reg1 and has reg2 
+      if not line[2] in list(instructions.keys()):
+         instructions[line[2]] = []
+      instructions[line[2]].append([line[0], line[1], line[3], line[4]])
 
 
 arch = "KPU"
@@ -2230,6 +2232,19 @@ konec
 
 for ins_data in instructions["re"]:
    ins_map[int(ins_data[0])][int(ins_data[1])] = re_impl
+
+# halt (stop)
+halt_impl = ucode_define(f"""
+halt<>
+   {fault_align}
+   {behind}
+   stop
+konec
+""")  
+
+for ins_data in instructions["halt"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = halt_impl
+
 
 # dre block
 
