@@ -42,7 +42,7 @@ for line in csv_file:
 arch = "KPU"
 
 major = "1b"
-minor = "29-main"
+minor = "31-main"
 
 out = open(f"{arch}v{major}.{minor}.K99", "w")
 print(f"KPUv{major}.{minor} stats")
@@ -504,6 +504,48 @@ safe-zvedni
 konec
 """)
 
+trim_tt0 = ucode_define(f"""
+trim-tt0
+   když je značka
+      zvedni
+      když je značka
+         zvedni
+         když je značka
+            zvedni
+            trim-tt0
+            polož
+            polož
+            polož
+         konec, jinak
+         konec
+      konec, jinak
+      konec
+   konec, jinak
+   konec
+konec
+""")
+
+trim_tt1 = ucode_define(f"""
+trim-tt1
+   když je značka
+      zvedni
+      když je značka
+         zvedni
+         když je značka
+            zvedni
+            trim-tt1
+         konec, jinak
+            polož
+            polož
+         konec
+      konec, jinak
+         polož
+      konec
+   konec, jinak
+   konec
+konec
+""")
+
 set_normalflow = ucode_define(f"""
 set-normalflow
    opakuj 2-krát
@@ -552,6 +594,27 @@ set-overflow
       polož
       polož
    konec
+konec
+""")
+
+set_negative = ucode_define(f"""
+set-negative
+   {trim_tt0}   
+konec
+""")
+
+set_zero = ucode_define(f"""
+set-zero
+   {trim_tt0}
+   polož
+konec
+""")
+
+set_positive = ucode_define(f"""
+set-positive
+   {trim_tt0}
+   polož
+   polož
 konec
 """)
 
@@ -2031,7 +2094,7 @@ udec<[var]>
    {root_align}
    {inc_and_carry}
    [root to p0]
-   {sub_one_and_carry}
+   {inc_and_carry_no_inv}
    {root_align}
 konec
 """
@@ -2056,6 +2119,45 @@ for ins_data in instructions["udec"]:
 #if not detailed_print:
 #   print(f"  udec - iids: {pre_i} - {i - 1}")
 
+ueval_var = f"""
+ueval-pos<[var]>
+   {root_align}
+   {shift_right}
+   {set_positive}
+   {shift_left}
+konec
+
+ueval-zero<[var]>
+   {root_align}
+   {shift_right}
+   {set_zero}
+   {shift_left}
+konec
+
+ueval<[var]>
+   {root_align}
+   {inc_and_carry}
+   [root to p0]
+   když není značka
+      krok
+      když není značka
+         krok
+         když není značka
+            ueval-zero<[var]>
+         konec, jinak
+            ueval-pos<[var]>
+         konec
+      konec, jinak
+         ueval-pos<[var]>
+      konec
+   konec, jinak
+      ueval-pos<[var]>
+   konec
+konec
+"""
+
+for ins_data in instructions["ueval"]:
+   ins_map[int(ins_data[0])][int(ins_data[1])] = ucode_instantiate_var(ueval_var, ("[var]", "[root to p0]"), (f"r{int(ins_data[2])}", r_to_r[4][int(ins_data[2])]))
 
 #print("")
 
@@ -2063,7 +2165,7 @@ for ins_data in instructions["udec"]:
 
 i = 0
 
-# ce/nce ins
+# ce/ice ins
 
 is_re_comp_var = f"""
 is-re-comp-rec<[var]>
